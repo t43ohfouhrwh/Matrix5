@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrix</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+    #bar { display: flex; gap: 8px; padding: 10px 12px; background: #12121a; border-bottom: 1px solid #2a2a3a; }
+    #url { flex: 1; padding: 10px 14px; border: 1px solid #333; border-radius: 8px; background: #1a1a24; color: #fff; font-size: 15px; outline: none; }
+    #url:focus { border-color: #00ff9d; }
+    button { padding: 10px 18px; background: #00ff9d; color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #00cc7d; }
+    #frame { flex: 1; width: 100%; border: none; background: #fff; }
+    #status { font-size: 12px; color: #666; padding: 4px 12px; }
+  </style>
+</head>
+<body>
+  <div id="bar">
+    <input id="url" type="text" placeholder="Enter URL (example.com or https://...)" autocomplete="off" spellcheck="false">
+    <button onclick="go()">Go</button>
+  </div>
+  <div id="status">Matrix encrypted proxy – URLs are hidden</div>
+  <iframe id="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+
+  <script>
+    const input = document.getElementById('url');
+    const frame = document.getElementById('frame');
+
+    async function go() {
+      let raw = input.value.trim();
+      if (!raw) return;
+      const res = await fetch('/encrypt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: raw })
+      });
+      const data = await res.json();
+      if (data.encrypted) {
+        frame.src = '/p/' + data.encrypted;
+        // Show the encrypted path in the bar so it looks like a real browser address
+        input.value = window.location.origin + '/p/' + data.encrypted;
+      }
+    }
+
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+
+    // If someone lands directly on an encrypted URL, load it
+    if (location.pathname.startsWith('/p/')) {
+      frame.src = location.pathname;
+      input.value = location.href;
+    }
+  </script>
+</body>
+</html>
